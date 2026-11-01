@@ -5,7 +5,7 @@
 
 - 最近更新：2026-11-01
 - 当前阶段：阶段 0（规划，不写业务代码）——**已全部完成，等待输出阶段总结确认**
-- 当前步骤：阶段 1 / 步骤 1.1（待用户回复"继续"后开始）
+- 当前步骤：阶段 3 收尾（3.3 前端页 + Discourse 部署配置），随后阶段 4/5/6 连续推进
 
 ## 已完成步骤
 
@@ -92,7 +92,14 @@
 - **验收（PROJECT_BRIEF）**：①数据库中日记正文为密文——`plaintext_leak=0` 实测 ✅；②后台可处理预警工单——API 级状态机全流程（open→processing→resolved，终态 5002）+ 管理端 UI 渲染验证（DOM）✅。
 - **ISS-2 恶化记录**：本轮 ZCode 内置浏览器点击面完全失效（阶段 1 尚可用），GUI 点击类验收被迫降级为 API 级 + DOM 渲染验证；环境级问题，非项目缺陷。dom_cua/Playwright 混合排障过程详见会话记录。
 
-## 当前阶段：阶段 2 已完成，等待阶段总结确认
+### [~] 阶段 3 科普内容 + 社区（进行中：后端已完成并实测，前端页与 Discourse 部署配置待做）
+
+- **3.1 文章后端**（`aafcca0`，实测通过）：0005 种子（分类 + 示例待审核文章）；前台仅 published 可见（审核前 0 篇 → 审核后 1 篇）；详情含 信息来源/审核人/更新时间/免责声明（硬性规则 7）；后台接口 /api/admin/articles（提交/审核/下线，驳回必填意见）。
+- **3.2 SSO 与社区回调**（`aafcca0`，实测通过）：
+  - DiscourseConnectService：HMAC-SHA256 验签（FixedTimeEquals 防时序），密钥 env `DISCOURSE_SSO_SECRET`，开关 `DISCOURSE_SSO_ENABLED`；
+  - 设计修正：真实 Discourse 只传 nonce，本站 JWT 在 localStorage 不随 302 传递 → GET /api/community/sso 302 到前端处理页 `/community-sso`，前端持令牌调 **POST /api/community/sso-url** 换取回跳地址（实测回跳签名自洽、含 external_id/email/nonce，坏签名 1000）；
+  - POST /api/community/crisis-callback：`X-Light-Signature`（HMAC over raw body）验签 + 关键词命中建工单（external_ref=`discourse://topic/{id}/post/{id}`）。实测：有效签名+危机词→工单(source=community)；坏签名 1000；无危机词 alerted=false。
+- **待做（3.3）**：/web 文章列表+详情页、/community-sso 处理页、/admin 文章审核页；`deploy/discourse/`（官方镜像独立部署配置 + SSO 参数说明，本机无法起 Discourse → 部署项记录 TODO）；阶段 3 验收（GUI：未审核文章不可见已由 API 实测覆盖；回调建单已实测）。
 
 下一步（回复"继续"后）：**阶段 3 科普内容 + 社区**
 - 文章模块（分类、来源、审核流、发布）+ 后台审核接口
@@ -119,7 +126,7 @@
 | 0 | 规划：0.1 / 0.2 / 0.3 | **完成** |
 | 1 | 骨架 + 量表 + 危机提示（1.1–1.5 + 验收） | **完成** |
 | 2 | 账号 + 情绪日记 + 后台（2.1–2.5 + 验收） | **完成** |
-| 3 | 科普内容 + 社区（Discourse SSO） | 未开始 |
+| 3 | 科普内容 + 社区（SSO+回调后端完成实测；前端页与 Discourse 配置待做） | 进行中 |
 | 4 | 咨询预约 | 未开始 |
 | 5 | AI 陪伴 | 未开始 |
 | 6 | 部署与合规收尾 | 未开始 |
