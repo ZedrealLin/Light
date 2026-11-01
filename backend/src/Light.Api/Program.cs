@@ -45,12 +45,14 @@ try
     builder.Services.AddSingleton<DbMigrator>();
     builder.Services.AddSingleton<Light.Api.Infrastructure.Crypto.IAesCipher, Light.Api.Infrastructure.Crypto.AesGcmCipher>();
 
-    // 业务：量表
+    // 业务：量表 + 日记
     builder.Services.AddScoped<Light.Api.Repositories.ScaleRepository>();
     builder.Services.AddScoped<Light.Api.Repositories.ScaleSubmissionRepository>();
     builder.Services.AddScoped<Light.Api.Repositories.CrisisRepository>();
     builder.Services.AddScoped<Light.Api.Services.CrisisAlertService>();
     builder.Services.AddScoped<Light.Api.Services.ScaleService>();
+    builder.Services.AddScoped<Light.Api.Repositories.DiaryRepository>();
+    builder.Services.AddScoped<Light.Api.Services.DiaryService>();
 
     // 危机干预：关键词检测（单例缓存）+ 30 秒刷新后台任务
     builder.Services.AddSingleton<Light.Api.Services.CrisisDetectionService>();
