@@ -45,6 +45,13 @@ try
     // 内置 OpenAPI 文档生成（.NET 10 自带，无需第三方包）
     builder.Services.AddOpenApi();
 
+    // CORS：来源走配置（Cors:AllowedOrigins），未配置时默认放行本地前端开发服务器
+    const string corsPolicy = "web";
+    var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+        ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
+    builder.Services.AddCors(options => options.AddPolicy(corsPolicy, policy =>
+        policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
+
     var app = builder.Build();
 
     // 启动迁移：可用环境变量 Migrations__RunOnStartup=false 关闭
@@ -58,6 +65,7 @@ try
 
     // 全局异常中间件必须最先注册：任何管道内异常都收敛为统一返回体
     app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseCors(corsPolicy);
     app.UseSerilogRequestLogging();
 
     app.MapOpenApi();
