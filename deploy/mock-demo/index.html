@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>心灯 · 前端静态演示（mock 数据）</title>
+<style>
+  :root { --bg:#faf6f0; --card:#fffdf9; --bd:#eee4d8; --tx:#4a4238; --mut:#8a8073; --pri:#d98a5f; --deep:#c77e4e; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:16px/1.8 'PingFang SC','Microsoft YaHei',system-ui,sans-serif; }
+  header { background:var(--card); border-bottom:1px solid var(--bd); padding:14px 20px; display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; }
+  .mark { font-size:22px; color:var(--deep); }
+  .tag { font-size:12px; color:var(--mut); border:1px solid var(--bd); border-radius:999px; padding:2px 10px; }
+  main { max-width:880px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:28px; font-weight:500; text-align:center; margin:26px 0 8px; }
+  .sub { text-align:center; color:var(--mut); margin:0 0 26px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; }
+  .card h3 { margin:0 0 8px; font-size:17px; font-weight:500; }
+  .card p { margin:0 0 6px; font-size:14px; color:var(--mut); }
+  .mock { display:inline-block; font-size:11px; color:var(--deep); background:#fdf1e7; border-radius:999px; padding:1px 8px; margin-top:4px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; background:var(--card); border-radius:12px; overflow:hidden; }
+  th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--bd); }
+  th { color:var(--mut); font-weight:400; }
+  .warn { background:#fdf6ec; border-radius:12px; padding:12px 16px; font-size:13px; color:var(--mut); margin-top:24px; }
+  footer { text-align:center; color:var(--mut); font-size:12px; padding:18px; border-top:1px solid var(--bd); }
+</style>
+</head>
+<body>
+<header>
+  <span class="mark">心灯</span><span style="color:var(--mut)">在情绪的夜里，留一盏灯</span>
+  <span class="tag">前端静态演示 · 全部为 mock 数据</span>
+</header>
+<main>
+  <h1>在情绪的夜里，留一盏灯</h1>
+  <p class="sub">这是一个不连接任何后端的静态演示页：本页所有数据均为占位 mock，不含真实用户数据、密钥或后端地址。</p>
+
+  <div class="grid">
+    <div class="card"><h3>自评量表</h3><p>PHQ-9（9 题）、GAD-7（7 题）、SDS（20 题）——配置化量表引擎，计分与分级规则全部来自 JSON 配置。</p><span class="mock">mock 数据</span></div>
+    <div class="card"><h3>情绪日记</h3><p>每日心情打分、标签与加密正文，支持 7/30/90 天趋势图与每日提醒。</p><span class="mock">mock 数据</span></div>
+    <div class="card"><h3>科普文章</h3><p>分类浏览，所有内容标注信息来源 / 审核人 / 更新时间，发布前经审核流。</p><span class="mock">mock 数据</span></div>
+    <div class="card"><h3>咨询预约</h3><p>咨询师档案（资质脱敏展示）、可约时段、取消释放；数据库层防超卖。</p><span class="mock">mock 数据</span></div>
+    <div class="card"><h3>AI 陪伴</h3><p>危机前置拦截：命中即返回固定安全话术，不调用模型；常驻"非医生/非治疗师"声明。</p><span class="mock">mock 数据</span></div>
+    <div class="card"><h3>管理后台</h3><p>预警工单（状态机留痕）、用户管理、量表版本与危机关键词管理。</p><span class="mock">mock 数据</span></div>
+  </div>
+
+  <h1 style="font-size:20px; margin-top:34px;">示例：mock 量表结果</h1>
+  <table>
+    <tr><th>量表</th><th>总分</th><th>分级提示（无诊断表述）</th></tr>
+    <tr><td>PHQ-9</td><td>1 / 27</td><td>目前未见明显情绪困扰的提示</td></tr>
+    <tr><td>GAD-7</td><td>6 / 21</td><td>存在轻度情绪困扰的提示，可关注自身状态</td></tr>
+    <tr><td>SDS（标准分）</td><td>62</td><td>存在中度情绪困扰的提示，建议咨询专业人员</td></tr>
+  </table>
+
+  <div class="warn">⚠️ 本站不提供医疗诊断或治疗建议。如果你正处于危机中，请立即拨打当地心理援助热线（真实号码上线前人工核实，本演示不展示）或前往就近医院。</div>
+</main>
+<footer>心灯（Light）· 前端静态演示 —— 由 site-deploy 发布；源码：github.com/ZedrealLin/Light</footer>
+</body>
+</html>
