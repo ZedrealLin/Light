@@ -45,6 +45,7 @@ watch(
         <router-link v-if="auth.isLoggedIn" to="/diaries" class="nav-link">情绪日记</router-link>
         <router-link to="/counselors" class="nav-link">咨询预约</router-link>
         <router-link v-if="auth.isLoggedIn" to="/my-bookings" class="nav-link">我的预约</router-link>
+        <router-link v-if="auth.isLoggedIn" to="/chat" class="nav-link">AI 陪伴</router-link>
       </nav>
       <div class="right">
         <template v-if="auth.isLoggedIn">

@@ -38,6 +38,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../../views/MyBookingsView.vue'),
   },
   {
+    path: '/chat',
+    name: 'AiChat',
+    component: () => import('../../views/ChatView.vue'),
+  },
+  {
     path: '/auth',
     name: 'Auth',
     component: () => import('../../views/AuthView.vue'),
