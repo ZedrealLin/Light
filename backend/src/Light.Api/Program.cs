@@ -3,6 +3,7 @@
 // 内置 OpenAPI（/openapi/v1.json）+ Scalar UI（/scalar，仅开发环境）。
 // 注意：日志不得输出日记正文、量表答案等敏感字段明文（后续各步自觉遵守，自查表核查）。
 using Light.Api.Common;
+using FluentValidation;
 using Light.Api.Infrastructure.Db;
 using Light.Api.Infrastructure.Migrations;
 using Scalar.AspNetCore;
@@ -23,9 +24,16 @@ try
 
     builder.Services.AddControllers();
 
-    // 基础设施：连接工厂 + 迁移工具
+    // 基础设施：连接工厂 + 迁移工具 + 应用层加密（密钥走环境变量 AES_DATA_KEY）
     builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
     builder.Services.AddSingleton<DbMigrator>();
+    builder.Services.AddSingleton<Light.Api.Infrastructure.Crypto.IAesCipher, Light.Api.Infrastructure.Crypto.AesGcmCipher>();
+
+    // 业务：量表
+    builder.Services.AddScoped<Light.Api.Repositories.ScaleRepository>();
+    builder.Services.AddScoped<Light.Api.Repositories.ScaleSubmissionRepository>();
+    builder.Services.AddScoped<Light.Api.Services.ScaleService>();
+    builder.Services.AddValidatorsFromAssemblyContaining<Light.Api.Models.Dto.ScaleSubmitRequestValidator>();
 
     // 内置 OpenAPI 文档生成（.NET 10 自带，无需第三方包）
     builder.Services.AddOpenApi();

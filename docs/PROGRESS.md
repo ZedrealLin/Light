@@ -50,10 +50,20 @@
   4. `/api/health` 显示 `"db":"ok"`；验证后临时实例已关闭、目录已删除。
 - **注意**：真实开发库（本机 5.7.44 服务）的账号密码尚未提供——需要时以环境变量 `ConnectionStrings__Default` 注入（建议写 `.env`，已被 .gitignore 排除），不提交仓库。
 
+### [x] 1.3 量表引擎（2026-11-01 完成）
+- 种子迁移 `0002_scale_seed.sql`：PHQ-9 / GAD-7 / SDS 全配置（题目/选项/计分/分级/预警规则/来源标注），SDS 反向题 value 预反转、乘 1.25 得标准分；`config.source.verified=false` 对应 TODO.md T006。
+- `Models/Scale/ScaleConfig.cs` + `Services/ScaleEngine.cs`：纯函数引擎——答案完整性/选项合法性校验（3002）、求分（乘数+四舍五入远离零）、分级区间命中、预警规则评估（questionAtLeast）。
+- xUnit：`backend/tests/Light.Api.Tests`（net10.0），**14 个用例全部通过**（含"第 9 题 ≥1 必触发"与边界/校验/配置健壮性）。
+- 接口（api-spec §2 落地）：`GET /api/scales`、`GET /api/scales/{code}`（对外投影**不含**计分/分级/预警规则）、`POST /api/scale-submissions`（匿名、答案 AES-GCM 加密落库、命中预警响应带 `crisis.helpUrl`）、`GET /api/scale-submissions/{publicId}`。
+- 加密设施：`Infrastructure/Crypto/AesGcmCipher`（密钥仅走环境变量 `AES_DATA_KEY`，nonce+密文+tag）。
+- 依赖新增：FluentValidation 12.2.0 + DependencyExtensions 12.2.0。
+- **实测输出（临时 5.7 实例 + light_dev）**：迁移 `新应用 2 个`；量表列表 3 条；详情投影泄漏检查 `False`；全 0 作答 → `totalScore=0/minimal/crisis=null`；**第 9 题=1 → `crisis={"helpUrl":"/crisis-help"}`**；结果取回 code=0；库中 `readable_plaintext_rows=0`（answers_cipher 均为 200 字节密文）；错误码 3002/3001/1000 全部按预期返回；验证后实例与测试密钥已清理。
+- 修复记录：①控制器路由改为契约的绝对路径 `/api/scale-submissions`；②MySqlConnector 将 CHAR(36) 映射为 Guid，仓储属性改用 Guid 接。
+
 ## 当前步骤
 
-**阶段 1 / 步骤 1.3：量表引擎**（进行中）
-- JSON 配置格式（题目/选项/计分/分级/预警规则 + 来源标注字段，T006 物权核实）、计分与分级服务 + xUnit 单元测试、种子迁移 0002（PHQ-9 / GAD-7 / SDS 配置）、量表与作答接口（api-spec §2）。
+**阶段 1 / 步骤 1.4：危机触发服务与预警工单**（待开始）
+- `CrisisDetectionService`（关键词内存缓存 + 30s 刷新）、命中建工单（10 分钟去重）、`GET /api/crisis/help`、种子迁移 0003（crisis_keywords 初始词集，T007 需人工确认）。
 
 ## 遗留问题
 
@@ -65,8 +75,8 @@
 
 ## 下一步
 
-1. 继续执行 1.3：量表引擎（无需用户确认，按步骤连续推进）。
-2. 1.3 完成 → 1.4 危机触发服务 → 1.5 前端骨架 → 阶段验收（web-gui-tester 作答 PHQ-9 第 9 题 ≥1 弹求助页）。
+1. 继续执行 1.4（无需用户确认）：危机触发服务 + 预警工单 + 求助页数据接口。
+2. 1.4 完成 → 1.5 /web 前端骨架 → 阶段 1 验收（web-gui-tester：作答 PHQ-9 第 9 题 ≥1 必须弹求助页并生成预警工单）。
 
 ## 阶段计划对照
 
