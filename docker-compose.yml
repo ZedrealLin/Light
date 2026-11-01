@@ -1,0 +1,108 @@
+# ============================================================================
+# 心灯（Light）部署编排 — docker compose up -d
+# 前置：复制根目录 .env.example 为 .env 并填写真实值（硬性规则 9）
+# 说明：
+#   - MySQL 8 为部署目标（开发基线 5.7 的脚本向后兼容）
+#   - Discourse 独立部署（见 deploy/discourse/README.md），不纳入本 compose
+#   - 首次启动由 API 的迁移工具自动执行 /backend/db/migrations
+# ============================================================================
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: light-mysql
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci --timezone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?请在 .env 填写}
+      MYSQL_DATABASE: ${DB_DATABASE:-light}
+      MYSQL_USER: ${DB_USER:-light}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?请在 .env 填写}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [light]
+
+  redis:
+    image: redis:7-alpine
+    container_name: light-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:?请在 .env 填写}
+    volumes:
+      - redis-data:/data
+    networks: [light]
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: ../deploy/api.Dockerfile
+    container_name: light-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Server=mysql;Port=3306;Database=${DB_DATABASE:-light};User ID=${DB_USER:-light};Password=${DB_PASSWORD};SslMode=None
+      Redis__Connection: redis:6379,password=${REDIS_PASSWORD}
+      AES_DATA_KEY: ${AES_DATA_KEY:?请在 .env 填写}
+      JWT_SECRET: ${JWT_SECRET:?请在 .env 填写}
+      CRISIS_HOTLINES: ${CRISIS_HOTLINES:-[{"name":"心理援助热线（占位）","number":"0-000-000000","note":"上线前人工核实"}]}
+      CRISIS_SAFE_REPLY: ${CRISIS_SAFE_REPLY:-}
+      DISCOURSE_SSO_ENABLED: ${DISCOURSE_SSO_ENABLED:-false}
+      DISCOURSE_SSO_SECRET: ${DISCOURSE_SSO_SECRET:-}
+      COMMUNITY_CALLBACK_SECRET: ${COMMUNITY_CALLBACK_SECRET:-}
+      AI_API_BASE: ${AI_API_BASE:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      Migrations__RunOnStartup: "true"
+    networks: [light]
+
+  web:
+    build:
+      context: ./web
+      dockerfile: ../deploy/web.Dockerfile
+      args:
+        VITE_API_BASE: /api
+    container_name: light-web
+    restart: unless-stopped
+    networks: [light]
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: ../deploy/web.Dockerfile
+      args:
+        VITE_API_BASE: /api
+    container_name: light-admin
+    restart: unless-stopped
+    networks: [light]
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: light-nginx
+    restart: unless-stopped
+    depends_on: [api, web, admin]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/light.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+    networks: [light]
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  light:
+    driver: bridge
