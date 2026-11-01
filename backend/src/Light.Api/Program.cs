@@ -53,6 +53,8 @@ try
     builder.Services.AddScoped<Light.Api.Services.ScaleService>();
     builder.Services.AddScoped<Light.Api.Repositories.DiaryRepository>();
     builder.Services.AddScoped<Light.Api.Services.DiaryService>();
+    builder.Services.AddScoped<Light.Api.Repositories.AdminRepository>();
+    builder.Services.AddScoped<Light.Api.Services.AdminService>();
 
     // 危机干预：关键词检测（单例缓存）+ 30 秒刷新后台任务
     builder.Services.AddSingleton<Light.Api.Services.CrisisDetectionService>();
@@ -98,7 +100,16 @@ try
     }
 
     // 危机关键词首次加载（此后由后台任务每 30 秒刷新）
-    await app.Services.GetRequiredService<Light.Api.Services.CrisisDetectionService>().ReloadAsync();
+    var detection = app.Services.GetRequiredService<Light.Api.Services.CrisisDetectionService>();
+    await detection.ReloadAsync();
+
+    // 开发兜底：admins 表为空时创建默认管理员（生产上线前必须改口令，TODO T009）
+    using (var scope = app.Services.CreateScope())
+    {
+        await scope.ServiceProvider
+            .GetRequiredService<Light.Api.Services.AdminService>()
+            .EnsureDefaultAdminAsync(CancellationToken.None);
+    }
 
     // 全局异常中间件必须最先注册：任何管道内异常都收敛为统一返回体
     app.UseMiddleware<GlobalExceptionMiddleware>();
