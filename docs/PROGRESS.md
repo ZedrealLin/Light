@@ -32,23 +32,41 @@
 - 危机干预流程图可视化（会话内，mermaid 源码以 crisis-flow.md 第 7 节为准）。
 - **TODO.md 说明**：受"每步 ≤3 个新文件"限制，首批"需人工确认"条目暂存于 risk-list.md 第 5 节，**步骤 1.1 开始时正式创建 `/docs/TODO.md`**（内容取自该节，硬性规则 8）。
 
+### [x] 1.1 后端骨架（2026-11-01 完成）
+- `docs/TODO.md`（8 条需人工确认事项正式建立）；`backend/Light.slnx` + `Light.Api`（net10.0）。
+- 统一返回体 `ApiResponse<T>`、错误码 `ErrorCodes`（CONVENTIONS 全表落位）、全局异常中间件（对外 1003 不泄堆栈）、Serilog（控制台 + 滚动文件）、内置 OpenAPI（`Microsoft.AspNetCore.OpenApi`）+ Scalar UI（仅开发环境，`/scalar`）。
+- 依赖（NuGet 最新稳定版，不猜版本）：Serilog.AspNetCore 10.0.0、Scalar.AspNetCore 2.18.7、Microsoft.AspNetCore.OpenApi 10.0.14。
+- 环境：本机 SDK 为 11.0.100-rc.3 + 运行时 10.0.14；实测 SDK 11 RC 可构建/运行 net10.0（目标包 NuGet 自动解析）。`dotnet new sln` 生成新格式 `Light.slnx`。
+- **实测输出**：`dotnet build` 0 警告 0 错误；`/api/health` 返回统一体 `{code:0,...,"traceId":"0HNPNT...:00000001"}`；`/openapi/v1.json` HTTP 200（OpenAPI 3.1.1）；`/scalar → 302 → /scalar/ → 200`（"Scalar API Reference"）；Serilog 请求日志正常。
+
+### [x] 1.2 迁移工具与连接设施（2026-11-01 完成）
+- `Infrastructure/Db/DbConnectionFactory`：连接串仅来自环境变量 `ConnectionStrings__Default`（硬性规则 9），未配置时健康检查如实报 `not_configured`。
+- `Infrastructure/Migrations/DbMigrator`：自写迁移工具——按文件名升序执行输出目录 `db/migrations/*.sql`，记录 `schema_migrations`；内置"顶层分号"切分器（引号/注释内分号不切分）；DDL 隐式提交故逐文件执行、逐文件记录；`Migrations__RunOnStartup=false` 可关闭。
+- 依赖：MySqlConnector 2.6.2、Dapper 2.1.89。csproj 将 `/backend/db/migrations/*.sql` 复制到输出目录（脚本唯一来源）。
+- **实测输出（临时 5.7 实例，独立 datadir + 端口 3307 + 独立库 light_dev）**：
+  1. 首启日志：`应用迁移：0001_init.sql` → `迁移完成：新应用 1 个，跳过 0 个（共 1 个）`；
+  2. 数据库核验：`schema_migrations` 有 1 行（0001_init.sql），表数量 18（17 业务表 + schema_migrations）；
+  3. 重启幂等：`迁移完成：新应用 0 个，跳过 1 个（共 1 个）`；
+  4. `/api/health` 显示 `"db":"ok"`；验证后临时实例已关闭、目录已删除。
+- **注意**：真实开发库（本机 5.7.44 服务）的账号密码尚未提供——需要时以环境变量 `ConnectionStrings__Default` 注入（建议写 `.env`，已被 .gitignore 排除），不提交仓库。
+
 ## 当前步骤
 
-**阶段 1 / 步骤 1.1：后端解决方案骨架**（尚未开始）
-- 内容：`Light.sln`、`Light.Api` 项目骨架、统一返回体、全局异常中间件、Serilog、OpenAPI + Scalar、`/api/health`。
-- 开始前动作：①创建 `/docs/TODO.md`（取 risk-list.md 第 5 节）；②确认开发库连接配置走环境变量（本机 MySQL 5.7.44，L4）。
+**阶段 1 / 步骤 1.3：量表引擎**（进行中）
+- JSON 配置格式（题目/选项/计分/分级/预警规则 + 来源标注字段，T006 物权核实）、计分与分级服务 + xUnit 单元测试、种子迁移 0002（PHQ-9 / GAD-7 / SDS 配置）、量表与作答接口（api-spec §2）。
 
 ## 遗留问题
 
 | 编号 | 事项 | 状态 |
 |---|---|---|
-| L2 | `/docs/TODO.md` 未创建 | 1.1 开始时创建（内容已在 risk-list.md 第 5 节） |
-| L6 | risk-list.md 中 8 条"需人工确认"事项（热线核实、法务审阅、备案、AI 合规、咨询师审核标准、量表版权、关键词词集、安全话术） | 按截止时点分阶段确认 |
+| L2 | `/docs/TODO.md` 未创建 | **已解决**（1.1 建立，8 条待确认 + 2 条已归档） |
+| L6 | risk-list.md 中 8 条"需人工确认"事项 | 已正式入 TODO.md（T001–T008），按截止时点确认 |
+| L7 | 本机 5.7.44 服务实例的账号密码未提供（真实开发库连接用） | 待用户提供（写 `.env`，环境变量名 `ConnectionStrings__Default`） |
 
 ## 下一步
 
-1. 等待用户阅读**阶段 0 阶段总结**，回复"继续"。
-2. 步骤 1.1：先建 TODO.md，再搭后端骨架（sln / csproj / Program.cs / Common）+ 编译验证。
+1. 继续执行 1.3：量表引擎（无需用户确认，按步骤连续推进）。
+2. 1.3 完成 → 1.4 危机触发服务 → 1.5 前端骨架 → 阶段验收（web-gui-tester 作答 PHQ-9 第 9 题 ≥1 弹求助页）。
 
 ## 阶段计划对照
 

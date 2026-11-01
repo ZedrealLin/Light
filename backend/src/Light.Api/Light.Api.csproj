@@ -8,9 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.89" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.18.7" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 迁移脚本复制到输出目录：迁移工具从 {BaseDirectory}/db/migrations 读取（脚本唯一来源为 /backend/db/migrations） -->
+    <Content Include="..\..\db\migrations\**\*.sql" CopyToOutputDirectory="PreserveNewest" LinkBase="db\migrations" />
   </ItemGroup>
 
 </Project>
