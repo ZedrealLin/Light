@@ -13,6 +13,10 @@
 | T006 | PHQ-9 / GAD-7 / SDS 来源与使用许可核实（SDS 版权重点核实） | risk-list C6 | 1.3 前 | **需人工确认** | 配置 JSON 中需带来源标注字段 |
 | T007 | 危机关键词初始词集人工确认 | crisis-flow §1 | 1.4 前 | **需人工确认** | 词集以迁移种子提供，后台可维护 |
 | T008 | AI 危机固定安全话术文案人工确认（`CRISIS_SAFE_REPLY`） | crisis-flow §5 | 阶段 5 前 | **需人工确认** | 上线前定稿 |
+| T009 | 生产上线前更换开发兜底管理员口令（admins 空表时自动创建 admin/Admin@123456） | security-review §4 | 上线前 | **需人工确认** | 或改为部署脚本生成随机口令 |
+| T010 | 实现 `GET /api/me/export`（个人数据导出）与 `POST /api/me/delete`（彻底删除，导出先行）——契约已有（api-spec §4） | security-review §4 | 上线前 | **需人工确认排期** | 硬性规则 4 |
+| T011 | 用户禁用时即时吊销其全部刷新令牌（当前仅改状态） | security-review §4 | 上线前 | **需人工确认排期** | |
+| T012 | AI 会话限流由内存实现切换 Redis（多实例部署必需） | security-review §4 | 阶段 6 部署 | **需人工确认排期** | .env 已含 REDIS_CONNECTION |
 
 ## 已确认事项归档
 
