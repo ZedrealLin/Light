@@ -51,7 +51,7 @@
 │   ├── risk-list.md           # 阶段 0.3：风险清单
 │   └── legal/                 # 阶段 6：隐私政策 / 用户协议 / 免责声明草稿
 ├── backend/
-│   ├── Light.sln
+│   ├── Light.slnx             # 解决方案（.NET 9+ XML 格式，SDK 默认生成）
 │   ├── src/
 │   │   └── Light.Api/         # ASP.NET Core Web API 主项目
 │   │       ├── Controllers/
