@@ -28,6 +28,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../../views/DiaryTrendView.vue'),
   },
   {
+    path: '/counselors',
+    name: 'Counselors',
+    component: () => import('../../views/CounselorsView.vue'),
+  },
+  {
+    path: '/my-bookings',
+    name: 'MyBookings',
+    component: () => import('../../views/MyBookingsView.vue'),
+  },
+  {
     path: '/auth',
     name: 'Auth',
     component: () => import('../../views/AuthView.vue'),

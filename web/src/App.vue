@@ -43,6 +43,8 @@ watch(
         <router-link to="/scales" class="nav-link">自评量表</router-link>
         <router-link to="/articles" class="nav-link">科普文章</router-link>
         <router-link v-if="auth.isLoggedIn" to="/diaries" class="nav-link">情绪日记</router-link>
+        <router-link to="/counselors" class="nav-link">咨询预约</router-link>
+        <router-link v-if="auth.isLoggedIn" to="/my-bookings" class="nav-link">我的预约</router-link>
       </nav>
       <div class="right">
         <template v-if="auth.isLoggedIn">
