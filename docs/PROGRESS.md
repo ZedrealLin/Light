@@ -60,10 +60,18 @@
 - **实测输出（临时 5.7 实例 + light_dev）**：迁移 `新应用 2 个`；量表列表 3 条；详情投影泄漏检查 `False`；全 0 作答 → `totalScore=0/minimal/crisis=null`；**第 9 题=1 → `crisis={"helpUrl":"/crisis-help"}`**；结果取回 code=0；库中 `readable_plaintext_rows=0`（answers_cipher 均为 200 字节密文）；错误码 3002/3001/1000 全部按预期返回；验证后实例与测试密钥已清理。
 - 修复记录：①控制器路由改为契约的绝对路径 `/api/scale-submissions`；②MySqlConnector 将 CHAR(36) 映射为 Guid，仓储属性改用 Guid 接。
 
+### [x] 1.4 危机触发服务与预警工单（2026-11-01 完成）
+- `Repositories/CrisisRepository`：关键词读取、工单写入、按 (source+关联对象) 的 10 分钟窗口去重查询。
+- `Services/CrisisDetectionService`：启用词集内存缓存 + `Match()` 大小写不敏感包含匹配；`Infrastructure/Jobs/CrisisKeywordRefreshJob`（BackgroundService）每 30 秒刷新，启动时首载。
+- `Services/CrisisAlertService`：统一建单动作——去重命中跳过落单（求助展示仍执行）、`detail_json` 最小化快照（只含规则/命中词，**不含答案与正文**）、建单失败不阻断用户、Warning 日志供监控接入。量表命中在 `ScaleService.SubmitAsync` 内联动建单。
+- `0003_crisis_keywords_seed.sql`：12 个初始关键词（T007 需人工确认）；`GET /api/crisis/help`：免责声明 + 热线（`CRISIS_HOTLINES` 配置，默认占位 `0-000-000000` + "上线前人工核实"）+ 建议文案。
+- **实测输出（临时 5.7 实例）**：迁移 `新应用 3 个`；关键词加载 `12 个`；两次第 9 题=1 提交 → 响应 `crisis` 非空 + `crisis_alerts` 两条（source=scale, status=open, detail 只含 triggeredRules）；`/api/crisis/help` 返回占位热线与 T001 标注。
+- 过程修复：①`Hotline` record 补 `JsonPropertyName`（System.Text.Json 默认大小写敏感导致字段全 null）；②`AesGcmCipher` 对 `AES_DATA_KEY` 做 Trim 容错；③定位测试环境陷阱——**Git Bash(MSYS) 会把以 `/` 开头的环境变量值当路径转换**，测试脚本改用不以 `/` 开头的一次性密钥（产品代码无此问题）。
+
 ## 当前步骤
 
-**阶段 1 / 步骤 1.4：危机触发服务与预警工单**（待开始）
-- `CrisisDetectionService`（关键词内存缓存 + 30s 刷新）、命中建工单（10 分钟去重）、`GET /api/crisis/help`、种子迁移 0003（crisis_keywords 初始词集，T007 需人工确认）。
+**阶段 1 / 步骤 1.5：/web 前端骨架**（待开始）
+- Vue 3 + Vite + TS + Pinia + Vue Router + Element Plus：首页（含危机常驻入口）、量表列表、作答页、结果页（免责声明 + 危机时求助浮层）、/crisis-help 求助页；请求统一封装（统一返回体/错误码拦截）。
 
 ## 遗留问题
 
@@ -75,8 +83,8 @@
 
 ## 下一步
 
-1. 继续执行 1.4（无需用户确认）：危机触发服务 + 预警工单 + 求助页数据接口。
-2. 1.4 完成 → 1.5 /web 前端骨架 → 阶段 1 验收（web-gui-tester：作答 PHQ-9 第 9 题 ≥1 必须弹求助页并生成预警工单）。
+1. 继续执行 1.5（无需用户确认）：/web 前端骨架（Vite 脚手架 + 路由 + 请求封装 + 五个页面）。
+2. 1.5 完成 → 阶段 1 验收：后端 + 前端联调（临时实例），web-gui-tester 实测"作答 PHQ-9 第 9 题 ≥1 必须弹出求助页并生成预警工单"，control-browser 截图确认无报错 → 阶段 1 阶段总结。
 
 ## 阶段计划对照
 

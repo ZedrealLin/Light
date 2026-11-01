@@ -31,7 +31,8 @@ public sealed class AesGcmCipher : IAesCipher
 
     public AesGcmCipher(IConfiguration configuration)
     {
-        var base64 = configuration["AES_DATA_KEY"];
+        // Trim：容忍环境变量末尾的空白/换行（Windows 追加变量时常带 CRLF）
+        var base64 = configuration["AES_DATA_KEY"]?.Trim();
         if (string.IsNullOrWhiteSpace(base64))
         {
             _key = null;

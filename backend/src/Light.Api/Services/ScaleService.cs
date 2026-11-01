@@ -10,12 +10,13 @@ namespace Light.Api.Services;
 
 /// <summary>
 /// 量表业务：列表 / 详情 / 提交作答（加密落库）/ 结果取回。
-/// 危机预警工单在 1.4 接入 CrisisAlertService；当前先把 is_crisis 落库并在响应中带 crisis 块。
+/// 命中预警规则时除 is_crisis 落库外，同步经 CrisisAlertService 建预警工单（crisis-flow §2）。
 /// </summary>
 public sealed class ScaleService
 {
     private readonly ScaleRepository _scales;
     private readonly ScaleSubmissionRepository _submissions;
+    private readonly CrisisAlertService _crisisAlerts;
     private readonly IAesCipher _cipher;
     private readonly ILogger<ScaleService> _logger;
 
@@ -24,11 +25,13 @@ public sealed class ScaleService
     public ScaleService(
         ScaleRepository scales,
         ScaleSubmissionRepository submissions,
+        CrisisAlertService crisisAlerts,
         IAesCipher cipher,
         ILogger<ScaleService> logger)
     {
         _scales = scales;
         _submissions = submissions;
+        _crisisAlerts = crisisAlerts;
         _cipher = cipher;
         _logger = logger;
     }
@@ -69,6 +72,14 @@ public sealed class ScaleService
             userId, row.Id, row.Config.Code, row.Version,
             cipher, result.TotalScore, result.LevelCode, result.LevelLabel, result.IsCrisis,
             cancellationToken);
+
+        // 危机干预（crisis-flow §2）：命中即建预警工单（10 分钟窗口去重在服务内）
+        if (result.IsCrisis)
+        {
+            await _crisisAlerts.TryCreateScaleAlertAsync(
+                inserted.Id, inserted.PublicId, row.Config.Code,
+                result.TotalScore, result.TriggeredCrisisRules, userId, cancellationToken);
+        }
 
         _logger.LogInformation(
             "量表作答已提交 code={Code} submissionPublicId={PublicId} totalScore={TotalScore} level={Level} isCrisis={IsCrisis}",
