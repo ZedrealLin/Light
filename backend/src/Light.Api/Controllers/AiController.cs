@@ -57,7 +57,6 @@ public sealed class AiController : ControllerBase
         catch (AiCrisisException ex)
         {
             // 硬性规则 2：命中危机 → code=7101 + 固定安全话术 + 求助入口（不调用模型）
-            var payload = ApiResponse<object>.Fail(ErrorCodes.AiCrisisRefusal, "我们注意到你可能正处于困难时刻", HttpContext.TraceIdentifier);
             return Ok(new ApiResponse<object>
             {
                 Code = ErrorCodes.AiCrisisRefusal,

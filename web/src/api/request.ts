@@ -57,7 +57,6 @@ instance.interceptors.response.use(
         if (token) config.headers.Authorization = `Bearer ${token}`
         return instance.request(config)
       }
-      window.location.hash = ''
       window.location.assign('/auth')
       return Promise.reject(error)
     }

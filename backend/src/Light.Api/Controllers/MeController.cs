@@ -47,8 +47,12 @@ public sealed class MeController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var user = await _users.FindByIdAsync(UserId, cancellationToken)
-            ?? throw new InvalidOperationException("用户不存在");
+        var user = await _users.FindByIdAsync(UserId, cancellationToken);
+        if (user is null)
+        {
+            // 账号已注销/删除但令牌仍在有效期：按未登录处理
+            return Unauthorized(ApiResponse<object>.Fail(ErrorCodes.Unauthorized, "请先登录", HttpContext.TraceIdentifier));
+        }
         var data = new UserBriefResponse(
             user.PublicId, user.Nickname,
             Mask(user.Phone), Mask(user.Email),

@@ -29,9 +29,8 @@ public sealed class DiaryController : ControllerBase
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var rows = await _service.ListAsync(UserId, from, to, page, pageSize, cancellationToken);
-        // 分页 total 与列表同源查询；此处列表全量返回时 total 即 rows.Count（阶段 2 数据量小，见 api-spec 分页约定）
-        var data = new { items = rows, total = rows.Count, page, pageSize };
+        var (items, total) = await _service.ListAsync(UserId, from, to, page, pageSize, cancellationToken);
+        var data = new { items, total, page, pageSize };
         return Ok(data.ToOk(HttpContext));
     }
 

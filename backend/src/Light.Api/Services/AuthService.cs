@@ -75,8 +75,11 @@ public sealed class AuthService
         return await IssueTokensAsync(user.Id, cancellationToken);
     }
 
-    /// <summary>发送验证码（mock）：仅生成与内存暂存，不调用任何真实短信通道。</summary>
-    public async Task SendSmsCodeAsync(string phone, CancellationToken cancellationToken)
+    /// <summary>
+    /// 发送验证码（mock）：仅生成与内存暂存，不调用任何真实短信通道。
+    /// 返回值：仅 Development 返回验证码供联调；生产恒为 null（日志不输出验证码明文）。
+    /// </summary>
+    public async Task<string?> SendSmsCodeAsync(string phone, CancellationToken cancellationToken)
     {
         var existing = await _users.FindByAccountAsync(phone, cancellationToken);
         if (existing is { Status: "anonymized" })
@@ -86,14 +89,9 @@ public sealed class AuthService
 
         var code = Random.Shared.Next(100000, 1000000).ToString();
         SmsCodes[phone] = (code, DateTime.UtcNow.Add(SmsCodeTtl));
-        // mock：不输出验证码到日志（日志脱敏），仅在 Development 随响应返回供联调
         _logger.LogInformation("验证码已生成（mock，不入日志） phone={Phone}", phone);
-        await Task.CompletedTask;
-        MockLastCode = _environment.IsDevelopment() ? code : null;
+        return _environment.IsDevelopment() ? code : null;
     }
-
-    /// <summary>最近一次生成的验证码；仅 Development 联调用，生产恒为 null。</summary>
-    public string? MockLastCode { get; private set; }
 
     public async Task<TokenResponse> SmsLoginAsync(SmsLoginRequest request, CancellationToken cancellationToken)
     {

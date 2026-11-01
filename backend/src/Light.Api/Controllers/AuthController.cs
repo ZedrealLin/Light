@@ -61,8 +61,8 @@ public sealed class AuthController : ControllerBase
         {
             return BadRequest(ApiResponse<object>.Fail(ErrorCodes.InvalidArgument, validation.Errors[0].ErrorMessage, HttpContext.TraceIdentifier));
         }
-        await _auth.SendSmsCodeAsync(request.Phone, cancellationToken);
-        var data = new { sent = true, mockCode = _auth.MockLastCode };
+        var mockCode = await _auth.SendSmsCodeAsync(request.Phone, cancellationToken);
+        var data = new { sent = true, mockCode };
         return Ok(data.ToOk(HttpContext));
     }
 

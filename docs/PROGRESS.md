@@ -5,7 +5,11 @@
 
 - 最近更新：2026-11-01
 - 当前阶段：阶段 0（规划，不写业务代码）——**已全部完成，等待输出阶段总结确认**
-- 当前步骤：**全部六阶段完成**（上线前必办清单见 docs/security-review.md §4 与 docs/TODO.md）
+- 当前步骤：**全部六阶段完成 + 全面梳理优化一轮**（2026-11-01 梳理修复：
+  ①日记分页 total 真 bug（翻页错值，临时实例实测 3 篇/页1=1/total=3）；②短信验证码 mock 并发竞态（改为方法返回值）；
+  ③已删除账号访问 /api/me → 401 而非 500；④compose 构建上下文修正（Dockerfile 移入项目内）+ 三个 .dockerignore；
+  ⑤nginx web/admin 增加 /api 反代（匹配 VITE_API_BASE=/api 相对路径）；⑥前端 request.ts 与 AiController 死代码清理。
+  上线前必办清单见 docs/security-review.md §4 与 docs/TODO.md）
 
 ## 已完成步骤
 

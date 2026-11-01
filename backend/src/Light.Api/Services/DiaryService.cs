@@ -103,12 +103,13 @@ public sealed class DiaryService
         return ToDetail(row, _cipher.Decrypt(row.ContentCipher));
     }
 
-    public async Task<IReadOnlyList<DiaryListItemResponse>> ListAsync(
+    public async Task<(IReadOnlyList<DiaryListItemResponse> Items, int Total)> ListAsync(
         long userId, DateOnly? from, DateOnly? to, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var (rows, _) = await _diaries.ListAsync(userId, from, to, page, pageSize, cancellationToken);
-        return rows.Select(r => new DiaryListItemResponse(
+        var (rows, total) = await _diaries.ListAsync(userId, from, to, page, pageSize, cancellationToken);
+        var items = rows.Select(r => new DiaryListItemResponse(
             r.Id, r.EntryDate, r.MoodScore, ParseTags(r.TagsJson), r.IsCrisis, r.CreatedAt)).ToList();
+        return (items, total);
     }
 
     public async Task SoftDeleteAsync(long userId, long id, CancellationToken cancellationToken)

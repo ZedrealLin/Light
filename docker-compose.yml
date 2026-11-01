@@ -40,7 +40,7 @@ services:
   api:
     build:
       context: ./backend
-      dockerfile: ../deploy/api.Dockerfile
+      dockerfile: Dockerfile
     container_name: light-api
     restart: unless-stopped
     depends_on:
@@ -69,7 +69,7 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: ../deploy/web.Dockerfile
+      dockerfile: Dockerfile
       args:
         VITE_API_BASE: /api
     container_name: light-web
@@ -79,7 +79,7 @@ services:
   admin:
     build:
       context: ./admin
-      dockerfile: ../deploy/web.Dockerfile
+      dockerfile: Dockerfile
       args:
         VITE_API_BASE: /api
     container_name: light-admin
