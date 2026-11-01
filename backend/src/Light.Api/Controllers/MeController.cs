@@ -1,7 +1,10 @@
 using Dapper;
+using System.Text;
+using System.Text.Json;
 using Light.Api.Common;
 using Light.Api.Infrastructure.Auth;
 using Light.Api.Infrastructure.Db;
+using Light.Api.Repositories;
 using Light.Api.Models.Dto;
 using Light.Api.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -17,11 +20,25 @@ public sealed class MeController : ControllerBase
 {
     private readonly UserRepository _users;
     private readonly IDbConnectionFactory _factory;
+    private readonly DiaryRepository _diaries;
+    private readonly ScaleSubmissionRepository _submissions;
+    private readonly AiRepository _ai;
+    private readonly Infrastructure.Crypto.IAesCipher _cipher;
+    private readonly ILogger<MeController> _logger;
 
-    public MeController(UserRepository users, IDbConnectionFactory factory)
+    public MeController(
+        UserRepository users, IDbConnectionFactory factory,
+        DiaryRepository diaries, ScaleSubmissionRepository submissions,
+        AiRepository ai, Infrastructure.Crypto.IAesCipher cipher,
+        ILogger<MeController> logger)
     {
         _users = users;
         _factory = factory;
+        _diaries = diaries;
+        _submissions = submissions;
+        _ai = ai;
+        _cipher = cipher;
+        _logger = logger;
     }
 
     private long UserId => long.Parse(User.FindFirst("sub")?.Value
@@ -87,6 +104,73 @@ public sealed class MeController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(ErrorCodes.NotFound, "通知不存在", HttpContext.TraceIdentifier));
     }
 
+    /// <summary>个人数据导出（硬性规则 4）：资料 + 日记明文 + 作答结果 + AI 对话，JSON 下载。</summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var user = await _users.FindByIdAsync(UserId, cancellationToken)
+            ?? throw new InvalidOperationException("用户不存在");
+        var diaryRows = await _diaries.ListForExportAsync(UserId, cancellationToken);
+        var diaries = diaryRows.Select(r => new
+        {
+            entryDate = r.EntryDate,
+            moodScore = r.MoodScore,
+            content = _cipher.Decrypt(r.ContentCipher),
+            tags = r.TagsJson,
+            isCrisis = r.IsCrisis,
+            createdAt = r.CreatedAt,
+        }).ToList();
+        var submissions = (await _submissions.ListForExportAsync(UserId, cancellationToken)).Select(r => new
+        {
+            scaleCode = r.ScaleCode,
+            totalScore = r.TotalScore,
+            levelCode = r.LevelCode,
+            levelLabel = r.LevelLabel,
+            isCrisis = r.IsCrisis,
+            createdAt = r.CreatedAt,
+        }).ToList();
+        var sessions = await _ai.ListSessionsAsync(UserId, cancellationToken);
+        var conversations = new List<object>();
+        foreach (var (sid, _, _, _) in sessions)
+        {
+            var msgs = await _ai.ListMessagesAsync(sid, cancellationToken);
+            conversations.Add(new
+            {
+                sessionId = sid,
+                messages = msgs.Select(m => new { role = m.Role, content = _cipher.Decrypt(m.ContentCipher), m.CreatedAt }),
+            });
+        }
+        var export = new
+        {
+            exportedAtUtc = DateTime.UtcNow,
+            profile = new { user.PublicId, user.Nickname, user.Phone, user.Email, user.PrivacyConsentAt },
+            diaries,
+            scaleSubmissions = submissions,
+            aiConversations = conversations,
+        };
+        _logger.LogInformation("个人数据已导出 user={UserId}（审计）", UserId);
+        return File(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(export, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        })), "application/json", $"light-export-{DateTime.UtcNow:yyyyMMddHHmmss}.json");
+    }
+
+    /// <summary>彻底删除我的数据与账号（硬性规则 4）：需显式 confirm；事务内按 FK 顺序删除。</summary>
+    [HttpPost("delete")]
+    [Consumes("application/json")]
+    public async Task<IActionResult> DeleteMyData([FromBody] DeleteMeRequest request, CancellationToken cancellationToken)
+    {
+        if (!request.Confirm)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ErrorCodes.InvalidArgument, "请显式确认（confirm=true）后执行删除", HttpContext.TraceIdentifier));
+        }
+        await _users.RevokeAllRefreshTokensAsync(UserId, cancellationToken);
+        await _users.DeleteUserCompletelyAsync(UserId, cancellationToken);
+        _logger.LogWarning("用户已彻底删除全部数据并注销 userId={UserId}（审计）", UserId);
+        return Ok(new { done = true }.ToOk(HttpContext));
+    }
+
     private static string? Mask(string? value)
     {
         if (string.IsNullOrEmpty(value)) return null;
@@ -107,3 +191,5 @@ public sealed class MeController : ControllerBase
 }
 
 public sealed record UpdateMeRequest(string? Nickname);
+
+public sealed record DeleteMeRequest(bool Confirm);

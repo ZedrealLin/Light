@@ -161,6 +161,43 @@ public sealed class UserRepository
         await connection.ExecuteAsync(new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
     }
 
+    /// <summary>
+    /// 彻底删除用户及其全部关联数据（硬性规则 4"删除我的数据"）。
+    /// 按 FK 依赖顺序在事务内显式删除（多为 ON DELETE RESTRICT，必须显式处理，保证可审计）。
+    /// </summary>
+    public async Task DeleteUserCompletelyAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _factory.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var steps = new[]
+            {
+                "DELETE FROM crisis_alerts WHERE user_id = @userId",
+                "DELETE FROM notifications WHERE user_id = @userId",
+                "DELETE FROM diary_reminders WHERE user_id = @userId",
+                "DELETE FROM refresh_tokens WHERE user_id = @userId",
+                "DELETE FROM bookings WHERE user_id = @userId",
+                "DELETE FROM diaries WHERE user_id = @userId",
+                "DELETE m FROM ai_messages m JOIN ai_sessions s ON s.id = m.session_id WHERE s.user_id = @userId",
+                "DELETE FROM ai_sessions WHERE user_id = @userId",
+                "DELETE FROM scale_submissions WHERE user_id = @userId",
+                "DELETE FROM users WHERE id = @userId",
+            };
+            foreach (var sql in steps)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    sql, new { userId }, transaction, cancellationToken: cancellationToken));
+            }
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     private sealed class UserRowRaw
     {
         public long id { get; set; }

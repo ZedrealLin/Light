@@ -40,10 +40,10 @@
 - **回调安全**：社区回调与 SSO 均为 HMAC + FixedTimeEquals 防时序攻击。
 - **信息泄露**：管理员/用户接口手机邮箱脱敏；异常响应不含堆栈。
 
-## 4. 上线前必办事项（汇总至 docs/TODO.md）
+## 4. 上线前必办事项（汇总至 docs/TODO.md；T010/T011 已于 2026-11-01 完成并从清单移除）
 
-1. **T010（新增）**：`GET /api/me/export` 与 `POST /api/me/delete` 尚未实现（契约已有，api-spec §4）——硬性规则 4 的导出与删除能力，需在上线前补齐；
-2. **T011（新增）**：用户被禁用时未即时吊销其刷新令牌（当前仅改状态，旧 access token 在有效期内仍可用）——需在 DisableUserAsync 中调用 RevokeAllRefreshTokensAsync；
+1. ~~T010~~ **已实现并实测**（2026-11-01）：导出（日记明文/AI 会话 JSON 下载）与彻底删除（事务按 FK 顺序，旧令牌访问被拒）；
+2. ~~T011~~ **已实现并实测**（2026-11-01）：禁用用户 → 全部刷新令牌吊销（旧 refreshToken 刷新 2001）；
 3. **T012（新增）**：AI 限流当前为内存实现（单实例有效），多实例部署需切 Redis（.env.example 已含 REDIS_CONNECTION）；
 4. docker compose 全容器链路需在有 Docker 的环境实测（本机 Docker 不可用；YAML 已静态校验）；
 5. Discourse 实际部署与回调对接方式（Webhook 转发）需人工确认（deploy/discourse/README.md）。

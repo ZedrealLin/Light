@@ -16,6 +16,7 @@ namespace Light.Api.Services;
 public sealed class AdminService
 {
     private readonly AdminRepository _admins;
+    private readonly UserRepository _users;
     private readonly IDbConnectionFactory _factory;
     private readonly JwtTokenService _jwt;
     private readonly CrisisDetectionService _detection;
@@ -23,11 +24,12 @@ public sealed class AdminService
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
-        AdminRepository admins, IDbConnectionFactory factory, JwtTokenService jwt,
+        AdminRepository admins, UserRepository users, IDbConnectionFactory factory, JwtTokenService jwt,
         CrisisDetectionService detection, IWebHostEnvironment environment,
         ILogger<AdminService> logger)
     {
-        _admins = admins;
+_admins = admins;
+        _users = users;
         _factory = factory;
         _jwt = jwt;
         _detection = detection;
@@ -71,14 +73,16 @@ public sealed class AdminService
             r.Id, r.PublicId, r.Nickname, Mask(r.Phone), Mask(r.Email), r.Status, r.CreatedAt)).ToList();
     }
 
-    public Task<bool> DisableUserAsync(long userId, bool disable, CancellationToken cancellationToken)
+    public async Task<bool> DisableUserAsync(long userId, bool disable, CancellationToken cancellationToken)
     {
-        if (disable)
+        var ok = await _admins.SetUserStatusAsync(userId, disable ? "disabled" : "active", cancellationToken);
+        if (ok && disable)
         {
-            // 禁用同时吊销其全部刷新令牌，立即生效
-            return _admins.SetUserStatusAsync(userId, "disabled", cancellationToken);
+            // T011：禁用即时吊销全部刷新令牌，已签发的访问令牌到期后自然失效（60 分钟内）
+            await _users.RevokeAllRefreshTokensAsync(userId, cancellationToken);
+            _logger.LogInformation("用户已禁用并吊销全部刷新令牌 userId={UserId}（审计）", userId);
         }
-        return _admins.SetUserStatusAsync(userId, "active", cancellationToken);
+        return ok;
     }
 
     /// <summary>新增量表配置版本（历史版本保留）；config_json 必须能解析为量表配置。</summary>

@@ -138,6 +138,16 @@ public sealed class DiaryRepository
             total);
     }
 
+    /// <summary>导出用：该用户全部日记（含密文，服务层解密）。</summary>
+    public async Task<IReadOnlyList<DiaryRow>> ListForExportAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var sql = $"SELECT {RowColumns} FROM diaries WHERE user_id = @userId ORDER BY entry_date";
+        await using var connection = await _factory.OpenAsync(cancellationToken);
+        var rows = await connection.QueryAsync<DiaryRowRaw>(
+            new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
+        return rows.Select(r => r.ToRecord()).ToList();
+    }
+
     /// <summary>趋势数据（近 N 天，轻量列）。</summary>
     public async Task<IReadOnlyList<(DateOnly Date, int MoodScore)>> TrendAsync(
         long userId, int days, CancellationToken cancellationToken = default)

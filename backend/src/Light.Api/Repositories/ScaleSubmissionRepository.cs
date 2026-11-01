@@ -90,6 +90,22 @@ public sealed class ScaleSubmissionRepository
         return row is null ? null : row.ToRecord();
     }
 
+    /// <summary>导出用：该用户全部作答记录（总分/分级为明文最小字段；答案密文不导出）。</summary>
+    public async Task<IReadOnlyList<ScaleSubmissionRow>> ListForExportAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT id, public_id, user_id, scale_code, scale_version,
+                   answers_cipher, total_score, level_code, level_label, is_crisis, created_at
+            FROM scale_submissions
+            WHERE user_id = @userId
+            ORDER BY id
+            """;
+        await using var connection = await _factory.OpenAsync(cancellationToken);
+        var rows = await connection.QueryAsync<SubmissionRow>(
+            new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
+        return rows.Select(r => r.ToRecord()).ToList();
+    }
+
     private sealed class SubmissionRow
     {
         public long id { get; set; }
