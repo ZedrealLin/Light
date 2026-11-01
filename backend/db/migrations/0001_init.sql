@@ -1,6 +1,8 @@
 -- ============================================================================
 -- 心灯（Light）数据库初始化脚本 — 0001_init.sql
--- 目标数据库：MySQL 8.0+ / InnoDB / utf8mb4 / utf8mb4_0900_ai_ci
+-- 目标数据库：MySQL 5.7.44（开发基线，2026-11-01 用户确认）～ MySQL 8.0+（部署目标）
+-- 排序规则：utf8mb4_unicode_ci（5.7 / 8.0 双兼容，不使用 8 专属的 0900 排序规则）
+-- 注意：CHECK 约束在 5.7 中被解析但不生效，相关校验由应用层（FluentValidation）承担，升到 8 后自动生效
 -- 约定：
 --   1. 所有时间列 DATETIME(3)，统一存 UTC（部署配置保证会话时区为 UTC）
 --   2. 幂等：全部 CREATE TABLE IF NOT EXISTS，可重复执行
@@ -33,7 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uk_users_public_id (public_id),
   UNIQUE KEY uk_users_phone (phone),
   UNIQUE KEY uk_users_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前台用户';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='前台用户';
 
 -- ----------------------------------------------------------------------------
 -- 2. admins 后台管理员（独立凭据，与前台用户分离）
@@ -49,7 +51,7 @@ CREATE TABLE IF NOT EXISTS admins (
   updated_at    DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   UNIQUE KEY uk_admins_username (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='后台管理员';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='后台管理员';
 
 -- ----------------------------------------------------------------------------
 -- 3. refresh_tokens 刷新令牌（只存哈希）
@@ -66,7 +68,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   KEY idx_refresh_tokens_user (user_id),
   CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='刷新令牌';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='刷新令牌';
 
 -- ----------------------------------------------------------------------------
 -- 4. diary_reminders 日记提醒设置（每用户一条）
@@ -83,7 +85,7 @@ CREATE TABLE IF NOT EXISTS diary_reminders (
   UNIQUE KEY uk_diary_reminders_user (user_id),
   CONSTRAINT fk_diary_reminders_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日记提醒设置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记提醒设置';
 
 -- ----------------------------------------------------------------------------
 -- 5. scales 量表定义（题目/选项/计分/分级/预警规则全部在 config_json，
@@ -101,7 +103,7 @@ CREATE TABLE IF NOT EXISTS scales (
   PRIMARY KEY (id),
   UNIQUE KEY uk_scales_code_version (code, version),
   CONSTRAINT chk_scales_config_json CHECK (JSON_VALID(config_json))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='量表定义（配置化引擎）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='量表定义（配置化引擎）';
 
 -- ----------------------------------------------------------------------------
 -- 6. scale_submissions 量表作答记录（答案密文；支持匿名作答）
@@ -127,7 +129,7 @@ CREATE TABLE IF NOT EXISTS scale_submissions (
     REFERENCES users (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT fk_scale_submissions_scale FOREIGN KEY (scale_id)
     REFERENCES scales (id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='量表作答记录（答案密文）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='量表作答记录（答案密文）';
 
 -- ----------------------------------------------------------------------------
 -- 7. diaries 情绪日记（正文密文；每用户每天一条；软删除）
@@ -151,7 +153,7 @@ CREATE TABLE IF NOT EXISTS diaries (
   CONSTRAINT fk_diaries_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT chk_diaries_mood CHECK (mood_score BETWEEN 1 AND 5)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='情绪日记（正文密文）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='情绪日记（正文密文）';
 
 -- ----------------------------------------------------------------------------
 -- 8. crisis_keywords 危机关键词配置（日记/社区发帖/AI 对话命中即触发预警）
@@ -164,7 +166,7 @@ CREATE TABLE IF NOT EXISTS crisis_keywords (
   updated_at DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   UNIQUE KEY uk_crisis_keywords_keyword (keyword)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='危机关键词配置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='危机关键词配置';
 
 -- ----------------------------------------------------------------------------
 -- 9. ai_sessions AI 陪伴会话
@@ -182,7 +184,7 @@ CREATE TABLE IF NOT EXISTS ai_sessions (
   KEY idx_ai_sessions_user (user_id, started_at),
   CONSTRAINT fk_ai_sessions_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI 陪伴会话';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 陪伴会话';
 
 -- ----------------------------------------------------------------------------
 -- 10. ai_messages AI 陪伴消息（内容密文；危机命中留痕）
@@ -198,7 +200,7 @@ CREATE TABLE IF NOT EXISTS ai_messages (
   KEY idx_ai_messages_session (session_id, id),
   CONSTRAINT fk_ai_messages_session FOREIGN KEY (session_id)
     REFERENCES ai_sessions (id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI 陪伴消息（密文）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 陪伴消息（密文）';
 
 -- ----------------------------------------------------------------------------
 -- 11. crisis_alerts 预警工单（危机干预核心表）
@@ -233,7 +235,7 @@ CREATE TABLE IF NOT EXISTS crisis_alerts (
     REFERENCES ai_sessions (id) ON DELETE SET NULL ON UPDATE RESTRICT,
   CONSTRAINT fk_crisis_alerts_admin FOREIGN KEY (handled_by)
     REFERENCES admins (id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='预警工单（危机干预）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预警工单（危机干预）';
 
 -- ----------------------------------------------------------------------------
 -- 12. counselors 咨询师档案（含资质字段与审核状态）
@@ -260,7 +262,7 @@ CREATE TABLE IF NOT EXISTS counselors (
   KEY idx_counselors_active (is_active),
   CONSTRAINT fk_counselors_admin FOREIGN KEY (reviewed_by)
     REFERENCES admins (id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='咨询师档案（资质+审核）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='咨询师档案（资质+审核）';
 
 -- ----------------------------------------------------------------------------
 -- 13. counselor_slots 可预约时段
@@ -279,7 +281,7 @@ CREATE TABLE IF NOT EXISTS counselor_slots (
   CONSTRAINT fk_counselor_slots_counselor FOREIGN KEY (counselor_id)
     REFERENCES counselors (id) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT chk_counselor_slots_time CHECK (end_at > start_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='可预约时段';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='可预约时段';
 
 -- ----------------------------------------------------------------------------
 -- 14. bookings 咨询预约
@@ -312,7 +314,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     REFERENCES counselors (id) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT fk_bookings_slot FOREIGN KEY (slot_id)
     REFERENCES counselor_slots (id) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='咨询预约（DB 层防超卖）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='咨询预约（DB 层防超卖）';
 
 -- ----------------------------------------------------------------------------
 -- 15. article_categories 科普文章分类
@@ -328,7 +330,7 @@ CREATE TABLE IF NOT EXISTS article_categories (
   PRIMARY KEY (id),
   UNIQUE KEY uk_article_categories_slug (slug),
   UNIQUE KEY uk_article_categories_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='科普文章分类';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='科普文章分类';
 
 -- ----------------------------------------------------------------------------
 -- 16. articles 科普文章（审核发布；含"信息来源/审核人/更新时间"—硬性规则 7）
@@ -359,7 +361,7 @@ CREATE TABLE IF NOT EXISTS articles (
     REFERENCES admins (id) ON DELETE SET NULL ON UPDATE RESTRICT,
   CONSTRAINT fk_articles_reviewer FOREIGN KEY (reviewed_by)
     REFERENCES admins (id) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='科普文章（审核发布）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='科普文章（审核发布）';
 
 -- ----------------------------------------------------------------------------
 -- 17. notifications 站内通知
@@ -377,7 +379,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   KEY idx_notifications_user (user_id, is_read, id),
   CONSTRAINT fk_notifications_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='站内通知';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站内通知';
 
 -- ============================================================================
 -- 结束：17 张表。种子数据（量表 JSON 配置、初始管理员、危机关键词初始集）

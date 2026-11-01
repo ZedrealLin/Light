@@ -16,7 +16,7 @@
 
 ### 后端
 - .NET 10，ASP.NET Core Web API（Controller 风格）
-- 数据访问：Dapper + MySqlConnector，MySQL 8，字符集 utf8mb4
+- 数据访问：Dapper + MySqlConnector，MySQL，字符集 utf8mb4。**环境决定（2026-11-01，用户确认）：开发环境使用本机 MySQL 5.7.44（Windows 服务），SQL 以 5.7 为最低兼容基线——不使用 CTE、窗口函数等 8 专属语法，排序规则统一 `utf8mb4_unicode_ci`（5.7/8 双兼容）；部署目标仍为 MySQL 8（Docker Compose，阶段 6）。CHECK 约束在 5.7 中被解析但不生效，相关校验由应用层（FluentValidation）承担**
 - 数据库迁移：纯 SQL 脚本，按序号命名放在 `/backend/db/migrations`，启动时由迁移工具（自写或 DbUp）顺序执行
 - Redis（StackExchange.Redis）：缓存与验证码；接口限流用 ASP.NET Core 内置 RateLimiter
 - 鉴权：JWT Bearer（访问令牌 + 刷新令牌）；密码哈希用 BCrypt 或 PBKDF2
@@ -78,8 +78,9 @@
 - 异步方法加 `Async` 后缀；校验器类名 `XxxValidator`；服务接口 `IXxxService` + 实现 `XxxService`。
 - 控制器 `XxxController`，一个资源一个控制器；DTO 按用途命名：`XxxRequest` / `XxxResponse`。
 
-### 4.2 数据库（MySQL 8，utf8mb4）
+### 4.2 数据库（开发基线 MySQL 5.7 / 部署目标 MySQL 8，utf8mb4）
 - 库名、表名、字段名：小写 snake_case；表名用复数（users、scales、scale_submissions、diaries、articles…）。
+- 排序规则统一 `utf8mb4_unicode_ci`（5.7 / 8.0 双兼容）；CHECK 约束 5.7 不生效，应用层必须校验。
 - 主键：`id BIGINT UNSIGNED AUTO_INCREMENT`；需对外暴露且防枚举的实体，另加公开标识列（`public_id`，UUID），阶段 0.2 定稿。
 - 审计字段：每表必有 `created_at`、`updated_at`（DATETIME(3)，存 UTC）；支持删除的业务表加 `deleted_at` 软删除。
 - 布尔字段 `is_*` / `has_*`；时间字段以 `_at` 结尾。
