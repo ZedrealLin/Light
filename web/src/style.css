@@ -1,0 +1,50 @@
+/* 心灯 · 全局视觉（CONVENTIONS 第 8 节：柔和、低刺激、浅暖色系、字号偏大、
+   避免高饱和红色警示；危机入口显眼但不惊吓） */
+
+:root {
+  /* 浅暖色系变量（业务自定义，light- 前缀避免与 Element Plus 冲突） */
+  --light-bg: #faf6f0;
+  --light-card: #fffdf9;
+  --light-border: #eee4d8;
+  --light-text-strong: #4a4238;
+  --light-text-muted: #8a8073;
+  --light-primary: #e2a377;
+  --light-primary-deep: #c77e4e;
+  --light-primary-bg: #fdf1e7;
+  --light-warn-bg: #fdf6ec;
+
+  /* Element Plus 主色覆盖为暖橙（低饱和），警示色柔和化 */
+  --el-color-primary: #d98a5f;
+  --el-color-primary-light-3: #e5a67f;
+  --el-color-primary-light-5: #edbd9f;
+  --el-color-primary-light-7: #f4d6bf;
+  --el-color-primary-light-8: #f8e3d2;
+  --el-color-primary-light-9: #fbf0e5;
+  --el-color-primary-dark-2: #b06e4a;
+  --el-color-danger: #d98a5f;
+  --el-color-error: #d98a5f;
+  --el-border-radius-base: 10px;
+  --el-font-size-base: 15px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--light-bg);
+  color: var(--light-text-strong);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--light-primary-deep);
+  text-decoration: none;
+}
