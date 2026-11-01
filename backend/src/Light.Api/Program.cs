@@ -58,6 +58,9 @@ try
     builder.Services.AddScoped<Light.Api.Repositories.ArticleRepository>();
     builder.Services.AddScoped<Light.Api.Services.ArticleService>();
     builder.Services.AddScoped<Light.Api.Repositories.BookingRepository>();
+    builder.Services.AddScoped<Light.Api.Repositories.AiRepository>();
+    builder.Services.AddScoped<Light.Api.Services.AiGatewayService>();
+    builder.Services.AddHttpClient("ai");
     builder.Services.AddSingleton<Light.Api.Services.DiscourseConnectService>();
 
     // 危机干预：关键词检测（单例缓存）+ 30 秒刷新后台任务
