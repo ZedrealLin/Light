@@ -1,0 +1,35 @@
+## Discourse 独立部署样例（discourse_docker containers/light-community.yml）
+## 用法：cp 本文件到 discourse_docker/containers/light-community.yml，按注释修改后
+##       ./discourse-bootstrap（首次）/ ./launcher start light-community
+## 完整参数见官方 samples/standalone.yml；本样例仅列必改项。
+
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+  - "templates/web.socketed.template.yml"
+
+# 暴露端口：建议由外部 Nginx 反代 443，仅暴露本机回环
+expose:
+  - "127.0.0.1:2080:80"
+
+params:
+  ## 社区域名（上线前人工确认 DNS/证书）
+  DISCOURSE_HOSTNAME: community.example.com
+  ## 管理员邮箱（上线前人工确认）
+  DISCOURSE_DEVELOPER_EMAILS: "admin@example.com"
+  ## SMTP 必配，否则无法创建管理员（供应商需人工确认）
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com
+  DISCOURSE_SMTP_PORT: 587
+  DISCOURSE_SMTP_USER_NAME: user@example.com
+  DISCOURSE_SMTP_PASSWORD: "CHANGE_ME"
+
+## 资源建议：≥2GB 内存（risk-list T3，需人工确认部署机规格）
+env:
+  UNICORN_WORKERS: 2
+  db_shared_buffers: "512MB"
+
+volumes:
+  volume:
+    host: /var/discourse/shared/light-community
+    guest: /shared

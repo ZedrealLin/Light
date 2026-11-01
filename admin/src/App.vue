@@ -17,6 +17,7 @@ function logout() {
         <el-menu-item index="/alerts">预警工单</el-menu-item>
         <el-menu-item index="/users">用户管理</el-menu-item>
         <el-menu-item index="/scales">量表与关键词</el-menu-item>
+        <el-menu-item index="/articles">文章审核</el-menu-item>
       </el-menu>
       <div class="logout">
         <el-button text @click="logout">退出登录</el-button>

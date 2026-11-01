@@ -26,8 +26,8 @@
       </el-card>
       <el-card class="card" shadow="never">
         <h3>科普文章</h3>
-        <p>了解情绪、睡眠与求助途径的靠谱内容，全部标注信息来源与审核人。功能即将上线。</p>
-        <el-button text disabled>即将上线</el-button>
+        <p>了解情绪、睡眠与求助途径的靠谱内容，全部标注信息来源与审核人。</p>
+        <el-button text type="primary" @click="$router.push('/articles')">去看看 →</el-button>
       </el-card>
     </section>
 

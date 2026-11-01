@@ -66,3 +66,36 @@ export const addKeyword = (keyword: string) =>
 
 export const toggleKeyword = (keyword: string, isActive: boolean) =>
   http.post<{ done: boolean }>('/api/admin/crisis-keywords/toggle', { keyword, isActive })
+
+// ---------- 文章审核 ----------
+
+export interface AdminArticleItem {
+  id: number
+  title: string
+  status: string
+  sourceInfo: string
+  reviewNote: string | null
+  publishedAt: string | null
+  updatedAt: string
+}
+
+export const fetchArticles = (status: string | null, page = 1) => {
+  const qs = status ? `&status=${status}` : ''
+  return http.get<{ items: AdminArticleItem[] }>(`/api/admin/articles?page=${page}${qs}`)
+}
+
+export const createArticle = (payload: {
+  categoryId: number | null
+  title: string
+  slug: string | null
+  summary: string | null
+  content: string
+  sourceInfo: string
+}) => http.post<{ id: number }>('/api/admin/articles', payload)
+
+export const submitArticle = (id: number) => http.post<{ done: boolean }>(`/api/admin/articles/${id}/submit`)
+
+export const reviewArticle = (id: number, approve: boolean, note: string | null) =>
+  http.post<{ done: boolean }>(`/api/admin/articles/${id}/review`, { approve, note })
+
+export const offlineArticle = (id: number) => http.post<{ done: boolean }>(`/api/admin/articles/${id}/offline`)

@@ -41,6 +41,7 @@ watch(
       <nav class="nav">
         <router-link to="/" class="nav-link">首页</router-link>
         <router-link to="/scales" class="nav-link">自评量表</router-link>
+        <router-link to="/articles" class="nav-link">科普文章</router-link>
         <router-link v-if="auth.isLoggedIn" to="/diaries" class="nav-link">情绪日记</router-link>
       </nav>
       <div class="right">

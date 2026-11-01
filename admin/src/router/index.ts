@@ -23,6 +23,11 @@ const router = createRouter({
       name: 'AdminScales',
       component: () => import('../views/ScalesView.vue'),
     },
+    {
+      path: '/articles',
+      name: 'AdminArticles',
+      component: () => import('../views/ArticlesView.vue'),
+    },
     { path: '/', redirect: '/alerts' },
     { path: '/:pathMatch(.*)*', redirect: '/alerts' },
   ],
