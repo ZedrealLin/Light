@@ -1,10 +1,12 @@
+using Light.Api.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Api.Common;
 
 /// <summary>
-/// 全局异常中间件：任何未处理异常都返回统一返回体，
-/// 对外只给"服务暂不可用"（code=1003），堆栈与内部细节只进 Serilog 日志，绝不外泄。
+/// 全局异常中间件：
+/// - BizException（业务校验失败）→ 按其业务码返回 400 统一返回体；
+/// - 其他未处理异常 → 1003"服务暂不可用"，堆栈只进 Serilog，绝不外泄。
 /// </summary>
 public sealed class GlobalExceptionMiddleware
 {
@@ -22,6 +24,13 @@ public sealed class GlobalExceptionMiddleware
         try
         {
             await _next(context);
+        }
+        catch (BizException ex)
+        {
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(
+                ApiResponse<object>.Fail(ex.Code, ex.Message, context.TraceIdentifier));
         }
         catch (Exception ex)
         {
