@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { fetchArticleDetail, type ArticleDetail } from '../api/articles'
 
 const route = useRoute()
@@ -21,6 +23,13 @@ onMounted(async () => {
 function fmt(v: string | null): string {
   return (v ?? '').replace('T', ' ').slice(0, 16)
 }
+
+/** 正文为 Markdown（articles.content），渲染后经 DOMPurify 消毒，避免富文本注入 */
+const contentHtml = computed(() => {
+  const md = detail.value?.content ?? ''
+  if (!md) return ''
+  return DOMPurify.sanitize(marked.parse(md, { async: false }) as string)
+})
 </script>
 
 <template>
@@ -28,7 +37,7 @@ function fmt(v: string | null): string {
     <template v-if="detail">
       <h2 class="title">{{ detail.title }}</h2>
       <el-card class="content-card" shadow="never">
-        <pre class="content">{{ detail.content }}</pre>
+        <div class="content markdown-body" v-html="contentHtml"></div>
       </el-card>
 
       <!-- 硬性规则 7：信息来源 / 审核人 / 更新时间 -->
@@ -71,13 +80,62 @@ function fmt(v: string | null): string {
   margin-bottom: 12px;
 }
 .content {
-  white-space: pre-wrap;
   word-break: break-word;
-  font-family: inherit;
   font-size: 15px;
   line-height: 1.9;
   color: var(--light-text-strong);
+}
+/* Markdown 正文排版：柔和留白，标题层级清晰，避免高对比刺激 */
+.markdown-body :deep(h2) {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--light-primary-deep);
+  margin: 26px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid var(--light-primary);
+  line-height: 1.5;
+}
+.markdown-body :deep(h3) {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--light-text-strong);
+}
+.markdown-body :deep(p) {
+  margin: 10px 0;
+}
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 10px 0;
+  padding-left: 22px;
+}
+.markdown-body :deep(li) {
+  margin: 6px 0;
+}
+.markdown-body :deep(strong) {
+  font-weight: 600;
+  color: var(--light-primary-deep);
+}
+.markdown-body :deep(blockquote) {
+  margin: 14px 0;
+  padding: 10px 14px;
+  background: var(--light-bg-soft, #faf7f2);
+  border-left: 3px solid var(--light-primary);
+  border-radius: 8px;
+  color: var(--light-text-muted);
+}
+.markdown-body :deep(blockquote p) {
   margin: 0;
+}
+.markdown-body :deep(a) {
+  color: var(--light-primary-deep);
+  text-decoration: underline;
+  word-break: break-all;
+}
+.markdown-body :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--light-border, #eee4d8);
+  margin: 20px 0;
 }
 .meta-card p {
   font-size: 13px;
